@@ -78,7 +78,7 @@ $result_departments = $conn->query($sql_departments);
             display: block;
             margin-bottom: 5px;
         }
-        input[type="text"], select {
+        input[type="text"], input[type="number"], select {
             width: 100%;
             padding: 8px;
             margin-bottom: 10px;
@@ -99,10 +99,10 @@ $result_departments = $conn->query($sql_departments);
     <h2>Edit Book</h2>
     <form method="post" action="">
         <label for="title">Title:</label>
-        <input type="text" id="title" name="title" value="<?php echo $title; ?>" required>
+        <input type="text" id="title" name="title" value="<?php echo htmlspecialchars($title); ?>" required>
 
         <label for="author">Author:</label>
-        <input type="text" id="author" name="author" value="<?php echo $author; ?>" required>
+        <input type="text" id="author" name="author" value="<?php echo htmlspecialchars($author); ?>" required>
 
         <label for="subject">Subject:</label>
         <input type="text" id="subject" name="subject" value="<?php echo htmlspecialchars($subject); ?>" maxlength="100">

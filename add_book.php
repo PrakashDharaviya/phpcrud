@@ -54,7 +54,7 @@ $result_departments = $conn->query($sql_departments);
             display: block;
             margin-bottom: 5px;
         }
-        input[type="text"], select {
+        input[type="text"], input[type="number"], select {
             width: 100%;
             padding: 8px;
             margin-bottom: 10px;
