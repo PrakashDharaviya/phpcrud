@@ -36,10 +36,40 @@ include 'config.php';
         }
 
     </style>
+    <script>
+        // Ajax search for departments
+        function searchDept() {
+            let s = document.getElementById('deptSearch').value || '';
+            let req = new XMLHttpRequest();
+            req.onreadystatechange = function() {
+                if (this.readyState == 4 && this.status == 200) {
+                    document.getElementById('deptTable').innerHTML = this.responseText;
+                }
+            };
+            // encode query and add timestamp to avoid caching
+            req.open("GET", "search_dept.php?search=" + encodeURIComponent(s) + "&t=" + Date.now(), true);
+            req.send();
+        }
+        // Ajax search for books
+        function searchBook() {
+            let s = document.getElementById('bookSearch').value || '';
+            let req = new XMLHttpRequest();
+            req.onreadystatechange = function() {
+                if (this.readyState == 4 && this.status == 200) {
+                    document.getElementById('bookTable').innerHTML = this.responseText;
+                }
+            };
+            req.open("GET", "search_book.php?search=" + encodeURIComponent(s) + "&t=" + Date.now(), true);
+            req.send();
+        }
+    </script>
 </head>
 <body>
     <h2>Library Management System</h2>
     <h3>Department</h3>
+    <input type="text" id="deptSearch" placeholder="Search Departments..." onkeyup="searchDept()">
+    <br><br>
+    
     <a href="add_dept.php">Add Department</a>
     <table>
         <tr>
@@ -47,6 +77,7 @@ include 'config.php';
             <th>Name</th>
             <th>Action</th>
         </tr>
+        <tbody id="deptTable">
         <?php
         $sql = "SELECT * FROM department";
         $result = $conn->query($sql);
@@ -68,7 +99,10 @@ include 'config.php';
     </table>
 <br><br>
     <h3>Books</h3>
+    <input type="text" id="bookSearch" placeholder="Search Books..." onkeyup="searchBook()">
+    <br><br>
     <a href="add_book.php">Add Book</a>
+    
     <table>
         <tr>
             <th>ID</th>
@@ -80,29 +114,32 @@ include 'config.php';
             <th>Publication Year</th>
             <th>Action</th>
         </tr>
+        <tbody id="bookTable">
         <?php
+        // initial load: show all books
         $sql = "SELECT books.book_id, books.title, books.author, books.Subject, books.Price, books.Publication_Year, department.dept_name FROM books LEFT JOIN department ON books.dept_id = department.dept_Id";
         $result = $conn->query($sql);
-        if ($result->num_rows > 0) {
+        if ($result && $result->num_rows > 0) {
             while($row = $result->fetch_assoc()) {
                 echo "<tr>
-                        <td>".$row["book_id"]."</td>`
-                        <td>".$row["title"]."</td>
-                        <td>".$row["author"]."</td>
-                        <td>".$row["dept_name"]."</td>
-                        <td>".htmlspecialchars($row["Subject"])."</td>
-                        <td>".htmlspecialchars($row["Price"])."</td>
-                        <td>".htmlspecialchars($row["Publication_Year"])."</td>
+                        <td>". (int)$row["book_id"] ."</td>
+                        <td>".htmlspecialchars($row["title"]) ."</td>
+                        <td>".htmlspecialchars($row["author"]) ."</td>
+                        <td>".htmlspecialchars($row["dept_name"]) ."</td>
+                        <td>".htmlspecialchars($row["Subject"]) ."</td>
+                        <td>".htmlspecialchars($row["Price"]) ."</td>
+                        <td>".htmlspecialchars($row["Publication_Year"]) ."</td>
                         <td>
-                            <a href='edit_book.php?id=".$row["book_id"]."'>Edit</a> |
-                            <a href='delete_book.php?id=".$row["book_id"]."'>Delete</a>
+                            <a href='edit_book.php?id=".(int)$row["book_id"]."'>Edit</a> |
+                            <a href='delete_book.php?id=".(int)$row["book_id"]."'>Delete</a>
                         </td>
                     </tr>";
             }
         } else {
-            echo "<tr><td colspan='5'>No books found</td></tr>";
+            echo "<tr><td colspan='8'>No books found</td></tr>";
         }
         ?>
-    </table>
+        </tbody>
+    </table> 
 </body>
 </html>
