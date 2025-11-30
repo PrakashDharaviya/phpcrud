@@ -36,38 +36,18 @@ include 'config.php';
         }
 
     </style>
-    <script>
-        // Ajax search for departments
-        function searchDept() {
-            let s = document.getElementById('deptSearch').value || '';
-            let req = new XMLHttpRequest();
-            req.onreadystatechange = function() {
-                if (this.readyState == 4 && this.status == 200) {
-                    document.getElementById('deptTable').innerHTML = this.responseText;
-                }
-            };
-            // encode query and add timestamp to avoid caching
-            req.open("GET", "search_dept.php?search=" + encodeURIComponent(s) + "&t=" + Date.now(), true);
-            req.send();
-        }
-        // Ajax search for books
-        function searchBook() {
-            let s = document.getElementById('bookSearch').value || '';
-            let req = new XMLHttpRequest();
-            req.onreadystatechange = function() {
-                if (this.readyState == 4 && this.status == 200) {
-                    document.getElementById('bookTable').innerHTML = this.responseText;
-                }
-            };
-            req.open("GET", "search_book.php?search=" + encodeURIComponent(s) + "&t=" + Date.now(), true);
-            req.send();
-        }
-    </script>
 </head>
 <body>
     <h2>Library Management System</h2>
     <h3>Department</h3>
-    <input type="text" id="deptSearch" placeholder="Search Departments..." onkeyup="searchDept()">
+    <div style="display:inline-block; margin-bottom:10px;">
+        <input type="text" id="deptSearch" placeholder="Search Departments...">
+        <select id="deptPerPage">
+            <option value="5">5 / page</option>
+            <option value="10">10 / page</option>
+            <option value="25">25 / page</option>
+        </select>
+    </div>
     <br><br>
     
     <a href="add_dept.php">Add Department</a>
@@ -97,9 +77,18 @@ include 'config.php';
         }
         ?>
     </table>
-<br><br>
+    <!-- Department pagination  -->
+    <div id="deptPagination"></div>
+    <br><br>
     <h3>Books</h3>
-    <input type="text" id="bookSearch" placeholder="Search Books..." onkeyup="searchBook()">
+    <div style="display:inline-block; margin-bottom:10px;">
+        <input type="text" id="bookSearch" placeholder="Search Books...">
+        <select id="bookPerPage">
+            <option value="5">5 / page</option>
+            <option value="10" selected>10 / page</option>
+            <option value="25">25 / page</option>
+        </select>
+    </div>
     <br><br>
     <a href="add_book.php">Add Book</a>
     
@@ -116,7 +105,7 @@ include 'config.php';
         </tr>
         <tbody id="bookTable">
         <?php
-        // initial load: show all books
+        // show all books
         $sql = "SELECT books.book_id, books.title, books.author, books.Subject, books.Price, books.Publication_Year, department.dept_name FROM books LEFT JOIN department ON books.dept_id = department.dept_Id";
         $result = $conn->query($sql);
         if ($result && $result->num_rows > 0) {
@@ -140,6 +129,80 @@ include 'config.php';
         }
         ?>
         </tbody>
-    </table> 
+    </table>
+    <div id="bookPagination"></div>
+
+    <script>
+        function debounce(fn, wait) {
+            let t;
+            return function(...args) {
+                clearTimeout(t);
+                t = setTimeout(() => fn.apply(this, args), wait);
+            };
+        }
+
+        function fetchRows(url, targetTableId, targetPaginationId) {
+            const req = new XMLHttpRequest();
+            req.onreadystatechange = function() {
+                if (this.readyState == 4 && this.status == 200) {
+                    const parts = this.responseText.split('<!--PAGINATION-->');
+                    document.getElementById(targetTableId).innerHTML = parts[0] || '';
+                    document.getElementById(targetPaginationId).innerHTML = parts[1] || '';
+                }
+            };
+            req.open('GET', url, true);
+            req.send();
+        }
+
+        // department search
+        function searchDept(page = 1) {
+            const s = document.getElementById('deptSearch').value || '';
+            const per = document.getElementById('deptPerPage').value || 5;
+            const url = `search_dept.php?search=${encodeURIComponent(s)}&page=${page}&per_page=${per}&t=${Date.now()}`;
+            fetchRows(url, 'deptTable', 'deptPagination');
+
+            setTimeout(() => {
+                document.querySelectorAll('.dept-page-link').forEach(el => {
+                    el.addEventListener('click', function(e){
+                        e.preventDefault();
+                        const p = parseInt(this.getAttribute('data-page')) || 1;
+                        searchDept(p);
+                    });
+                });
+            }, 100);
+        }
+
+        // book search
+        function searchBook(page = 1) {
+            const s = document.getElementById('bookSearch').value || '';
+            const per = document.getElementById('bookPerPage').value || 10;
+            const url = `search_book.php?search=${encodeURIComponent(s)}&page=${page}&per_page=${per}&t=${Date.now()}`;
+            fetchRows(url, 'bookTable', 'bookPagination');
+            setTimeout(() => {
+                document.querySelectorAll('.page-link').forEach(el => {
+                    el.addEventListener('click', function(e){
+                        e.preventDefault();
+                        const p = parseInt(this.getAttribute('data-page')) || 1;
+                        searchBook(p);
+                    });
+                });
+            }, 100);
+        }
+
+        const debouncedDeptSearch = debounce(() => searchDept(1), 300);
+        const debouncedBookSearch = debounce(() => searchBook(1), 300);
+
+        document.getElementById('deptSearch').addEventListener('keyup', debouncedDeptSearch);
+        document.getElementById('deptPerPage').addEventListener('change', () => searchDept(1));
+
+        document.getElementById('bookSearch').addEventListener('keyup', debouncedBookSearch);
+        document.getElementById('bookPerPage').addEventListener('change', () => searchBook(1));
+
+        // initial paginated load
+        document.addEventListener('DOMContentLoaded', function() {
+            searchDept(1);
+            searchBook(1);
+        });
+    </script>
 </body>
 </html>
